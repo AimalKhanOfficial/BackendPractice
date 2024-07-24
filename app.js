@@ -1,6 +1,6 @@
 const express = require('express');
 const { z } = require('zod');
-const { isUserValid } = require('./dbHandler');
+const { isUserValid, getAllFriends } = require('./dbHandler');
 const jwt = require('jsonwebtoken');
 const JWTPass = 'myCoolJWTPass';
 
@@ -16,30 +16,53 @@ const User = z.object({
 });
 
 app.get('/allFriends', (req, res) => {
-    const token = req.headers.authorization;
-    if (!jwt.verify(token, JWTPass)) {
-        return res.json(400, {
-            message: 'invalid token'
+    let token = req.headers.authorization;
+    if (!token) {
+        return res.status(400).json({
+            message: 'Token must be provided'
         });
-    } else {
-        
+    }
+    if (token.split(' ').length > 1) {
+        token = token.split(' ')[1];
+    }
+    try {
+
+        const verifiedToken = jwt.verify(token, JWTPass);
+        if (!verifiedToken) {
+            return res.status(400).json({
+                message: 'invalid token'
+            });
+        } else {
+            return res.status(200).json({
+                message: 'success',
+                data: getAllFriends(verifiedToken.email)
+            });
+        }
+    } catch (err) {
+        return res.status(404).json({
+            message: 'Invalid token'
+        })
     }
 });
 
 app.post('/sign-in', (req, res) => {
     const { email, password } = req.body;
     if (!User.safeParse({ email, password }).success) {
-        return res.json(400, 'Email and/or password validation failed');
+        return res.status(400).json({
+            message: 'Email and/or password validation failed'
+        });
     }
 
     if (isUserValid(email, password)) {
-        const token = jwt.sign({email, password}, JWTPass);
-        return res.json(200, {
+        const token = jwt.sign({ email, password }, JWTPass);
+        return res.status(200).json({
             message: 'User Exists, welcome back!',
             token
         });
     } else {
-        return res.json(404, 'Invalid Username and password');
+        return res.status(404).json({
+            message: 'Invalid Username and password'
+        });
     }
 });
 

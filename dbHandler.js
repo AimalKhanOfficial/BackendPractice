@@ -25,6 +25,9 @@ let ALL_USERS = [
 
 const isUserValid = (email, pass) => ALL_USERS.find(a => a.email === email && a.pass === pass);
 
+const getAllFriends = (email) => ALL_USERS.find(a => a.email === email).friends;
+
 module.exports = {
-    isUserValid
+    isUserValid,
+    getAllFriends
 }
