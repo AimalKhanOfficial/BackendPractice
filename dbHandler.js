@@ -1,3 +1,23 @@
+require('dotenv').config()
+const mongoose = require('mongoose');
+
+mongoose.connect(process.env.MONGO_CONNECTION_STRING);
+
+//Mongo Schema
+const UsersSchema = mongoose.Schema({
+    email: String,
+    password: String,
+    fullName: String,
+    role: String,
+    friends: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Users'
+    }]
+});
+
+//model based on the Schema
+const User = mongoose.model('Users', UsersSchema);
+
 //sample database before i replace this with MongoDB
 let ALL_USERS = [
     {
@@ -23,11 +43,29 @@ let ALL_USERS = [
     }
 ]
 
-const isUserValid = (email, pass) => ALL_USERS.find(a => a.email === email && a.pass === pass);
+const addNewUser = (email, password, fullName, role = 'user', friends) => {
+    const newUser = new User({
+        email,
+        password,
+        fullName,
+        role,
+        friends
+    });
+    newUser.save();
+    return newUser;
+}
 
-const getAllFriends = (email) => ALL_USERS.find(a => a.email === email).friends;
+const isUserValid = async (email, password) => await User.findOne({
+    email,
+    password
+});
+
+const getAllFriends = async (email) => await User.findOne({
+    email
+}).friends;
 
 module.exports = {
     isUserValid,
-    getAllFriends
+    getAllFriends,
+    addNewUser
 }
